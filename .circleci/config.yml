@@ -15,7 +15,7 @@ jobs:
 
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-
+          key: frontend-build
           
   build-backend:
     docker:
