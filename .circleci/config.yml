@@ -104,7 +104,7 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: cimg/aws-cli@3.1.0
+      - image: circleci/aws-cli@3.1.0
     steps:
       # Checkout code from git
       - run:
