@@ -106,13 +106,12 @@ jobs:
     docker:
       - image: circleci/aws-cli@3.1.0
     steps:
-      # Checkout code from git
       - run:
           name: Ensure back-end infrastructure exists
           command: |
-            aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
-              --stack-name InitialStack \
+              aws cloudformation deploy
+              --template-file .circleci/files/cloudfront.yml
+              --stack-name InitialStack
               --parameter-overrides WorkflowID=udapeople-069163010511
 
 workflows:
