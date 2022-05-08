@@ -170,8 +170,9 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            rm -rf node_modules package-lock.json
-            npm cache clean --force
+            npm run clean
+            npm cache clean --
+            rm -rf node_modules && rm ./package-lock.json
             npm install
             npm run build
             npm run migrations > migrations_dump.txt
