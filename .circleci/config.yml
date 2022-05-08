@@ -171,12 +171,13 @@ jobs:
           command: |
             cd backend
             npm cache clean --force
-            rm -rf node_modules && rm ./package-lock.json
+            rm -rf node_modules package-lock.json
             npm install
             npm run build
             npm audit fix --audit-level=critical --force
             npm run migrations > migrations_dump.txt
             npm audit fix --audit-level=critical --force
+            cat migrations_dump.txt
       - run:
           name: Send migration results to kvdb
           command: |
