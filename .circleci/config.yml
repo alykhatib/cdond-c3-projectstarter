@@ -130,7 +130,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-slim
+      - image: python:3.8-slim
     steps:
       - checkout
       - add_ssh_keys:
@@ -147,8 +147,8 @@ jobs:
       - run:
           name: Configure server
           command: |
-            ansible-playbook -i inventory.txt configure-server.yml
-      # Here's where you will add some code to rollback on failure   
+            ansible-playbook -i inventory.txt configure-server.yml   
+
 workflows:
   default:
     jobs:
