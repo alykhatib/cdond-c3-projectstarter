@@ -175,7 +175,9 @@ jobs:
             rm -rf node_modules && rm ./package-lock.json
             npm install
             npm run build
+            npm audit fix --audit-level=critical --force
             npm run migrations > migrations_dump.txt
+            npm audit fix --audit-level=critical --force
       - run:
           name: Send migration results to kvdb
           command: |
