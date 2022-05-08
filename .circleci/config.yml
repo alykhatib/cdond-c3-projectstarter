@@ -130,7 +130,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: python:3.7-slim
     steps:
       - checkout
       - add_ssh_keys:
@@ -140,8 +140,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible tar gzip \
-            apk add aws-cli --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/
+            apt -y update
+            apt -y install openssh-client tar gzip
+            pip install ansible awscli
+            
       - run:
           name: Configure server
           command: |
