@@ -128,6 +128,24 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
 
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["df:a5:e4:de:98:0b:71:77:0f:a6:35:5a:77:74:ec:62"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update -y ansible tar gzip awscli
+      - run:
+          name: Configure server
+          command: |
+            ansible-playbook -i inventory.txt configure-server.yml
+      # Here's where you will add some code to rollback on failure   
 workflows:
   default:
     jobs:
@@ -142,4 +160,5 @@ workflows:
       - scan-backend:
           requires: [build-backend]
       - deploy-infrastructure
+      - configure-infrastructure
 
