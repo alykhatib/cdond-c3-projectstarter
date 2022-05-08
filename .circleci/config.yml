@@ -159,12 +159,13 @@ jobs:
           keys: [backend-build]
       
       - run:
-          name: install aws dependencies
-          command:
-            sudo apt update && sudo apt install -yy less curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          name: Install aws dependencies
+          command: |
+            sudo apt update && sudo apt install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
-            
+
       - run:
           name: Run migrations
           command: |
