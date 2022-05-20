@@ -10,6 +10,7 @@ commands:
             aws cloudformation delete-stack \
             --stack name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
           when: on_fail
+        
   revert-migration:
     description: Revert Migration
     parameters:
@@ -27,7 +28,6 @@ commands:
               npm install
               npm run migration:revert
             fi
-
 jobs:
   build-frontend:
     docker:
@@ -172,9 +172,17 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
-      - install_awscli
       - restore_cache:
           keys: [backend-build]
+      
+      - run:
+          name: Install aws dependencies
+          command: |
+            sudo apt update && sudo apt install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+
       - run:
           name: Run migrations
           command: |
@@ -186,9 +194,6 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm run migrations > migrations_dump.txt
 
-      - destroy-environment
-      - revert-migration
-
       - run:
           name: Send migration results to kvdb
           command: |
@@ -196,7 +201,9 @@ jobs:
             then
                 curl https://kvdb.io/U3F9mhuqmMMRzURYGubp6n/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-
+      - destroy-environment
+      - revert-migration
+            
 workflows:
   default:
     jobs:
