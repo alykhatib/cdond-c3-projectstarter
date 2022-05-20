@@ -11,23 +11,6 @@ commands:
             --stack name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
           when: on_fail
         
-  revert-migration:
-    description: Revert Migration
-    parameters:
-      Workflow_ID:
-        type: string
-    steps:
-      - run:
-          name: Revert Migration
-          when: on_fail
-          command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
-            if (( $SUCCESS == 1 ));
-            then
-              cd ~/cdond-c3-projectstarter/backend
-              npm install
-              npm run migration:revert
-            fi
 jobs:
   build-frontend:
     docker:
@@ -202,7 +185,6 @@ jobs:
                 curl https://kvdb.io/U3F9mhuqmMMRzURYGubp6n/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment
-      - revert-migration
             
 workflows:
   default:
