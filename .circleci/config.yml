@@ -24,7 +24,7 @@ commands:
             SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
             if (( $SUCCESS == 1 ));
             then
-              cd ~/project/backend
+              cd ~/cdond-c3-projectstarter/backend
               npm install
               npm run migration:revert
             fi
