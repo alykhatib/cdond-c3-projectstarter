@@ -173,7 +173,6 @@ jobs:
             then
                 curl https://kvdb.io/U3F9mhuqmMMRzURYGubp6n/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-      - destroy-environment
             
 workflows:
   default:
