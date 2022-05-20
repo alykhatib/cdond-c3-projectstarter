@@ -27,7 +27,7 @@ commands:
               npm install
               npm run migration:revert
             fi
-            
+
 jobs:
   build-frontend:
     docker:
@@ -172,11 +172,9 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - install_awscli
       - restore_cache:
           keys: [backend-build]
-      
-      - install_awscli
-
       - run:
           name: Run migrations
           command: |
