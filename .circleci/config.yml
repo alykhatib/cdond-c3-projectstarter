@@ -1,5 +1,48 @@
 version: 2.1
-  
+
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      workflow_id:
+        type: string
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow_id>>
+            aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
+  revert-migrations:
+    description: Reverting last migration if successfully run in the current workflow.
+    parameters:
+      workflow_id:
+        type: string 
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+              SUCCESS=$(curl https://keyvalue.immanuel.co/api/KeyVal/GetValue/wu12yolq/migration_<< parameters.workflow_id >>)
+              # Logic for reverting the database state
+              if (( $SUCCESS == 1 ));
+              then
+                  cd ~/project/backend/
+                  npm install
+                  npm run migration:revert
+              fi  
+
+
+  install_nodejs:
+    description: Install Nodejs
+    steps:
+      - run:
+          name: Install Nodejs
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install -y nodejs
+
 jobs:
   build-frontend:
     docker:
@@ -116,6 +159,8 @@ jobs:
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   configure-infrastructure:
     docker:
@@ -132,12 +177,13 @@ jobs:
             apt -y update
             apt -y install openssh-client tar gzip
             pip install ansible awscli
-            
       - run:
           name: Configure server
           command: |
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml   
+            ansible-playbook -i inventory.txt configure-server.yml  
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}" 
 
   run-migrations:
     docker:
@@ -169,7 +215,44 @@ jobs:
             then
                 curl https://kvdb.io/QUveYkeVKWYUehuBbGKLcq/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-            
+
+  deploy-frontend:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Install aws dependencies
+          command: |
+            sudo apt update && sudo apt install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - Install Nodejs
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            npm install
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text --filter Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}")
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+      - destroy-environment: 
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 workflows:
   default:
     jobs:
