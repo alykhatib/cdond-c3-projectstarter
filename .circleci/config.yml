@@ -306,9 +306,7 @@ jobs:
             yum update -y
             yum upgrade -y 
             yum install curl -y
-            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-            sudo apt install -y nodejs
-            
+
       - run:
           name: Backend smoke test
           command: |
