@@ -25,11 +25,11 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-              SUCCESS=$(curl https://keyvalue.immanuel.co/api/KeyVal/GetValue/wu12yolq/migration_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
               # Logic for reverting the database state
               if (( $SUCCESS == 1 ));
               then
-                  cd ~/project/backend/
+                  cd ~/project/backend
                   npm install
                   npm run migration:revert
               fi  
@@ -160,6 +160,23 @@ jobs:
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - run:
+          name: ensuring ip is written to anisble's inventory
+          command: |
+            cat ~/project/.circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/project/.circleci/ansible/
+          paths:
+            - inventory.txt            
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
@@ -221,7 +238,9 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - checkout     
+      - checkout 
+      - restore_cache:
+          keys: [frontend-build]  
       - run:
           name: Install aws dependencies
           command: |
@@ -231,13 +250,18 @@ jobs:
             sudo ./aws/install
       - install_nodejs
       - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            npm install      
+      - run:
           name: Get backend url
           command: |
             BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name.Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            echo API_URL="http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
           name: Deploy frontend objects
@@ -257,6 +281,8 @@ jobs:
       - image: python:3.8-slim
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]      
       - add_ssh_keys:
           fingerprints: ["df:a5:e4:de:98:0b:71:77:0f:a6:35:5a:77:74:ec:62"]
       - run:
@@ -267,17 +293,16 @@ jobs:
             pip install ansible awscli
       - attach_workspace:
           at: ~/
-      - restore_cache:
-          keys: [backend-deps]
       - run:
           name: Install dependencies
           command: |
             cd backend
             npm install
       - run:
-          name: Package Backend
+          name: Wrap Backend
           command: |
             cd backend
+            npm install
             npm run build
             tar -czf artifact.tar.gz dist/* package*
             cd ..
@@ -311,6 +336,10 @@ jobs:
       - run:
           name: Backend smoke test
           command: |
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)         
             # Fetch and prepare the BACKEND_IP env var
             export API_URL=http://${BACKEND_PUBLIC_IP}:3030
             if curl -s $API_URL/api/status | grep "ok"
@@ -332,7 +361,10 @@ jobs:
             else
               exit 1
             fi
-
+      - destroy-environment: 
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
