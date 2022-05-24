@@ -184,9 +184,14 @@ jobs:
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
       - run:
-          name: ensuring ip is written to anisble's inventory
+          name: Add back-end ip to ansible inventory
           command: |
-            cat ~/project/.circleci/ansible/inventory.txt
+            cd .circleci/ansible
+            aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text >> inventory.txt
+            cat inventory.txt
       - persist_to_workspace:
           root: ~/project/.circleci/ansible/
           paths:
@@ -362,12 +367,12 @@ jobs:
       - run:
           name: Backend smoke test
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text))         
-            # Fetch and prepare the BACKEND_IP env var
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
             export API_URL=http://${BACKEND_PUBLIC_IP}:3030
-            echo "${API_URL}"
-            echo curl -s ${API_URL}/api/status| grep "ok"
-            if curl -s ${API_URL}/api/status | grep "ok"
+            if curl -s $API_URL/api/status | grep "ok"
             then
               exit 0
             else
@@ -463,6 +468,6 @@ workflows:
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
-          requires: [deploy-backend, deploy-frontend]
+          requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]
