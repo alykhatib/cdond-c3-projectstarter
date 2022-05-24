@@ -1,6 +1,36 @@
-- name: "node start"
+---
+- name: install tar
+  become: yes
+  apt:
+    name: tar
+    state: latest
+    update_cache: yes
+
+- name: "Add nodejs 13.x"
   shell: |
-    cd ~/backend
+    curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash 
+    sudo apt-get install -y nodejs
+
+- name: install pm2
+  become: yes
+  npm:
+    name: pm2
+    global: yes
+    state: latest
+    production: yes
+
+- name: copy backend files
+  become: yes
+  copy:
+    src: artifact.tar.gz
+    dest: /home/ubuntu
+
+- name: Extract backend files
+  shell: |
+    cd /home/ubuntu
+    tar -xzvf artifact.tar.gz
+- name: Start pm2
+  shell: |    
+    npm i
     pm2 stop default
     pm2 start npm -- start
-  register: execute_node
