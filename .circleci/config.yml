@@ -323,6 +323,7 @@ jobs:
             echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
             echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
             echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env
+            echo "KVDB_BUCKET=${KVDB_BUCKET}" >> backend/.env
             echo "ENVIRONMENT: production" >> backend/.env
       - run:
           name: Package Backend
