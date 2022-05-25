@@ -353,32 +353,35 @@ jobs:
 
   smoke-test:
     docker:
-      - image: cimg/base:stable
+      - image: python:3.7-alpine3.11
     steps:
       - checkout      
       - run:
           name: Install dependencies
           command: |
-            sudo apt update && sudo apt install -yy less
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - install_nodejs
-
+            apk add --update ansible
+            apk add --update gzip
+            apk add --update tar
+            apk add --update npm
+            apk add --update nodejs
+            apk add --update curl
+            pip install awscli
       - run:
           name: Backend smoke test
           command: |
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            export BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
+            echo ${BACKEND_PUBLIC_IP}            
             export API_URL=http://${BACKEND_PUBLIC_IP}:3030
             echo ${API_URL}
-            if curl -s ${API_URL}/api/status | grep "ok"
+
+            if curl "${API_URL}/api/status" | grep "ok"
             then
-              exit 0
+                exit 0
             else
-              exit 1
+                exit 1
             fi
 
       - run:
