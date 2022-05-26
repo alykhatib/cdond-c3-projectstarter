@@ -37,7 +37,6 @@
     
 - name: "Start pm2"
   shell: |
-    cd /home/ubuntu
-    npm i
+    cd /home/ubuntu/dist
     pm2 stop default
-    pm2 start npm -- start
+    pm2 start main.js
