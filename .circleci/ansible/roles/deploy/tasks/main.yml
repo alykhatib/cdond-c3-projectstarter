@@ -1,11 +1,4 @@
 ---
-- name: install tar
-  become: yes
-  apt:
-    name: tar
-    state: latest
-    update_cache: yes
-
 - name: "Add nodejs 13.x"
   shell: |
     curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash 
@@ -28,6 +21,7 @@
 - name: Extract backend
   shell: |
     cd /home/ubuntu
+    sudo apt-get install -y tar
     tar -xzvf artifact.tar.gz
     
 - name: Start pm2
