@@ -36,7 +36,8 @@
     tar -xzvf artifact.tar.gz
     
 - name: "Start pm2"
-  shell: |    
+  shell: |
+    cd /home/ubuntu
     npm i
     pm2 stop default
     pm2 start npm -- start
