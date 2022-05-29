@@ -291,6 +291,12 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints: ["df:a5:e4:de:98:0b:71:77:0f:a6:35:5a:77:74:ec:62"]
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Install aws dependencies
           command: |
@@ -306,12 +312,6 @@ jobs:
             sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible -y
       - install_nodejs
-      - add_ssh_keys:
-          fingerprints: ["df:a5:e4:de:98:0b:71:77:0f:a6:35:5a:77:74:ec:62"]
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          keys: [backend-build]
       - run:
           name: Install dependencies
           command: |
