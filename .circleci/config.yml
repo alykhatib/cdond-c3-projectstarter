@@ -305,8 +305,7 @@ jobs:
             apk add --update nodejs
             apk add --update curl
             pip install awscli
-      # adding this step to add env variables to the backend so it can be migrated to the ec2 instance
-      # This consumed a lot of time investigating
+
       - run:
           name: updating backend env variables
           command: |
